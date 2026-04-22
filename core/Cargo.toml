@@ -1,5 +1,5 @@
 [package]
-name = "balatro-rs"
+name = "balatro_rs"
 version = "0.0.1"
 edition = "2021"
 description = "Game engine and move generator for simplified version of balatro"
