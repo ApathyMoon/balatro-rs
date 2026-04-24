@@ -22,6 +22,12 @@ impl GameEngine {
         }
     }
 
+    fn clone(&self) -> Self {
+        GameEngine {
+            game: self.game.clone(),
+        }
+    }
+
     fn gen_actions(&self) -> Vec<Action> {
         return self.game.gen_actions().collect();
     }
