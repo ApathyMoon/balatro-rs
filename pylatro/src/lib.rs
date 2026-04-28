@@ -6,14 +6,28 @@ use balatro_rs::game::Game;
 use balatro_rs::joker::Jokers;
 use balatro_rs::stage::{End, Stage};
 use pyo3::prelude::*;
+use serde_json;
 
-#[pyclass]
+#[pyclass(module = "pylatro")]
 struct GameEngine {
     game: Game,
 }
 
 #[pymethods]
 impl GameEngine {
+    pub fn __getstate__(&self) -> pyo3::PyResult<Vec<u8>> {
+        serde_json::to_vec(&self.game)
+            .map_err(|e| pyo3::exceptions::PyException::new_err(e.to_string()))
+    }
+
+    pub fn __setstate__(&mut self, state: Vec<u8>) -> pyo3::PyResult<()> {
+        self.game = serde_json::from_slice(&state)
+            .map_err(|e| pyo3::exceptions::PyException::new_err(e.to_string()))?;
+        self.game.rehydrate_effects(); // rebuild Arc<Mutex<fn>> closures serde skipped
+        Ok(())
+    }
+
+
     #[new]
     #[pyo3(signature = (config=None))]
     fn new(config: Option<Config>) -> Self {
@@ -22,10 +36,29 @@ impl GameEngine {
         }
     }
 
-    fn clone(&self) -> Self {
-        GameEngine {
+    fn clone_game(&self) -> Self {
+        let mut cloned = GameEngine {
             game: self.game.clone(),
-        }
+        };
+        cloned.game.rehydrate_effects();
+        cloned
+    }
+
+    pub fn clone(&self) -> Self {
+        self.clone_game()
+    }
+
+    pub fn copy(&self) -> Self {
+        self.clone_game()
+    }
+
+    // Also fix __copy__ and __deepcopy__ so Python's copy.deepcopy works too
+    pub fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn __deepcopy__(&self, _memo: pyo3::Bound<'_, pyo3::types::PyDict>) -> Self {
+        self.clone_game()
     }
 
     fn gen_actions(&self) -> Vec<Action> {
@@ -42,6 +75,12 @@ impl GameEngine {
 
     fn handle_action_index(&mut self, index: usize) -> Result<(), GameError> {
         return self.game.handle_action_index(index);
+    }
+
+    fn index_to_action(&self, index: usize) -> PyResult<Action> {
+        let space = self.game.gen_action_space();
+        space.to_action(index, &self.game)
+            .map_err(|e| pyo3::exceptions::PyException::new_err(format!("{:?}", e)))
     }
 
     #[getter]

@@ -13,6 +13,7 @@ use crate::stage::{Blind, End, Stage};
 
 use std::fmt;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Game {
     pub config: Config,
@@ -45,6 +46,21 @@ pub struct Game {
 }
 
 impl Game {
+    pub fn rehydrate_effects(&mut self) {
+        // 1. Create a fresh, empty registry
+        let mut new_registry = EffectRegistry::new();
+        
+        // 2. Clone the jokers so we don't hold a borrow on self
+        let current_jokers = self.jokers.clone();
+        
+        // 3. Register onto the NEW local registry. 
+        // This works because self is only borrowed immutably here.
+        new_registry.register_jokers(current_jokers, &self.config);
+        
+        // 4. Move the finished registry into the game
+        self.effect_registry = new_registry;
+    }
+
     pub fn new(config: Config) -> Self {
         let ante_start = Ante::try_from(config.ante_start).unwrap_or(Ante::One);
         Self {
@@ -232,7 +248,7 @@ impl Game {
         self.money -= joker.cost();
         self.jokers.push(joker);
         self.effect_registry
-            .register_jokers(self.jokers.clone(), &self.clone());
+            .register_jokers(self.jokers.clone(), &self.config);
         return Ok(());
     }
 

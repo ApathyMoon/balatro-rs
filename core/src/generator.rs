@@ -158,20 +158,16 @@ impl Game {
         if !self.stage.is_blind() {
             return;
         }
-        // Cannot select more if max already selected
         if self.available.selected().len() >= self.config.selected_max {
             return;
         }
-        self.available
-            .cards_and_selected()
-            .iter()
-            .enumerate()
-            .filter(|(_, (_, a))| !*a)
-            .for_each(|(i, _)| {
-                space
-                    .unmask_select_card(i)
-                    .expect("valid index for selecting");
-            });
+        let mut mask_idx = 0;
+        for (_card, is_selected) in self.available.cards_and_selected().iter() {
+            if !*is_selected {
+                space.unmask_select_card(mask_idx).expect("valid index");
+                mask_idx += 1;
+            }
+        }
     }
 
     fn unmask_action_space_play_and_discard(&self, space: &mut ActionSpace) {

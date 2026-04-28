@@ -1,13 +1,19 @@
 use crate::game::Game;
 use crate::hand::MadeHand;
 use crate::joker::{Joker, Jokers};
+use crate::config::Config;
 use std::sync::{Arc, Mutex};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct EffectRegistry {
+    #[serde(skip)] // <--- CRITICAL: Ignore this field during serialization
     pub on_play: Vec<Effects>,
+    #[serde(skip)]
     pub on_discard: Vec<Effects>,
+    #[serde(skip)]
     pub on_score: Vec<Effects>,
+    #[serde(skip)]
     pub on_handrank: Vec<Effects>,
 }
 
@@ -20,18 +26,18 @@ impl EffectRegistry {
             on_handrank: Vec::new(),
         };
     }
-    pub(crate) fn register_jokers(&mut self, jokers: Vec<Jokers>, game: &Game) {
-        for j in jokers.clone() {
-            for e in j.effects(game) {
-                match e {
-                    Effects::OnPlay(_) => self.on_play.push(e),
-                    Effects::OnDiscard(_) => self.on_discard.push(e),
-                    Effects::OnScore(_) => self.on_score.push(e),
-                    Effects::OnHandRank(_) => self.on_handrank.push(e),
-                }
+    pub(crate) fn register_jokers(&mut self, jokers: Vec<Jokers>, config: &Config) { 
+    for j in jokers {
+        for e in j.effects(config) { 
+            match e {
+                Effects::OnPlay(_) => self.on_play.push(e),
+                Effects::OnDiscard(_) => self.on_discard.push(e),
+                Effects::OnScore(_) => self.on_score.push(e),
+                Effects::OnHandRank(_) => self.on_handrank.push(e),
             }
         }
     }
+}
 }
 
 #[derive(Clone)]

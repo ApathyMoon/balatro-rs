@@ -6,6 +6,7 @@ use pyo3::pyclass;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 use strum::{EnumIter, IntoEnumIterator};
+use crate::config::Config;
 
 pub trait Joker: std::fmt::Debug + Clone {
     fn name(&self) -> String;
@@ -13,7 +14,7 @@ pub trait Joker: std::fmt::Debug + Clone {
     fn cost(&self) -> usize;
     fn rarity(&self) -> Rarity;
     fn categories(&self) -> Vec<Categories>;
-    fn effects(&self, game: &Game) -> Vec<Effects>;
+    fn effects(&self, config: &Config) -> Vec<Effects>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -107,10 +108,10 @@ macro_rules! make_jokers {
                     )*
                 }
             }
-            fn effects(&self, game: &Game) -> Vec<Effects> {
+            fn effects(&self, config: &Config) -> Vec<Effects> {
                 match self {
                     $(
-                        Jokers::$x(joker) => joker.effects(game),
+                        Jokers::$x(joker) => joker.effects(config),
                     )*
                 }
             }
@@ -175,7 +176,7 @@ impl Joker for TheJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, _hand: MadeHand) {
             g.mult += 4;
         }
@@ -203,7 +204,7 @@ impl Joker for GreedyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             let diamonds = hand
                 .hand
@@ -237,7 +238,7 @@ impl Joker for LustyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             let hearts = hand
                 .hand
@@ -271,7 +272,7 @@ impl Joker for WrathfulJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             let spades = hand
                 .hand
@@ -305,7 +306,7 @@ impl Joker for GluttonousJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             let clubs = hand
                 .hand
@@ -339,7 +340,7 @@ impl Joker for JollyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_pair().is_some() {
                 g.mult += 8
@@ -369,7 +370,7 @@ impl Joker for ZanyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_three_of_kind().is_some() {
                 g.mult += 12
@@ -399,7 +400,7 @@ impl Joker for MadJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_two_pair().is_some() {
                 g.mult += 10
@@ -429,7 +430,7 @@ impl Joker for CrazyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_straight().is_some() {
                 g.mult += 12
@@ -459,7 +460,7 @@ impl Joker for DrollJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::MultPlus]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_flush().is_some() {
                 g.mult += 10
@@ -489,7 +490,7 @@ impl Joker for SlyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::Chips]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_pair().is_some() {
                 g.chips += 50
@@ -519,7 +520,7 @@ impl Joker for WilyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::Chips]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_three_of_kind().is_some() {
                 g.chips += 100
@@ -549,7 +550,7 @@ impl Joker for CleverJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::Chips]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_two_pair().is_some() {
                 g.chips += 80
@@ -579,7 +580,7 @@ impl Joker for DeviousJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::Chips]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_straight().is_some() {
                 g.chips += 100
@@ -609,7 +610,7 @@ impl Joker for CraftyJoker {
     fn categories(&self) -> Vec<Categories> {
         vec![Categories::Chips]
     }
-    fn effects(&self, _in: &Game) -> Vec<Effects> {
+    fn effects(&self, _config: &Config) -> Vec<Effects> {
         fn apply(g: &mut Game, hand: MadeHand) {
             if hand.hand.is_flush().is_some() {
                 g.chips += 80
